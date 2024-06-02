@@ -1,0 +1,256 @@
+﻿@model Library_Mvc.Models.Book
+
+@{
+    ViewBag.Title = "Update Book";
+}
+
+<h1 class="text-center my-4">Update Book</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (ViewData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@ViewData["ErrorMessage"]</div>
+}
+
+<div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+<div id="successMessage" class="alert alert-success" style="display: none;"></div>
+
+<form id="updateBookForm" method="post" class="styled-form container p-4 bg-light border rounded">
+    <input type="hidden" id="bookId" name="Id" value="@Model.Id" />
+    <div class="form-group mb-3">
+        <label for="title" class="form-label">Title:</label>
+        <input type="text" id="title" name="Title" class="form-control" value="@Model.Title" required />
+        <div class="invalid-feedback">Title field is required.</div>
+    </div>
+    <div class="form-group mb-3">
+        <label for="description" class="form-label">Description:</label>
+        <textarea id="description" name="Description" class="form-control" rows="3" required>@Model.Description</textarea>
+        <div class="invalid-feedback">Description field is required.</div>
+    </div>
+    <div class="form-group mb-3">
+        <label for="image" class="form-label">Image URL:</label>
+        <input type="text" id="image" name="Image" class="form-control" value="@Model.Image" required />
+        <div class="invalid-feedback">Image field is required.</div>
+    </div>
+    <div class="form-group mb-3">
+        <label for="publicationDate" class="form-label">Publication Date:</label>
+        <input type="date" id="publicationDate" name="PublicationDate" class="form-control" value="@Model.PublicationDate.ToString("yyyy-MM-dd")" required />
+        <div class="invalid-feedback">Publication Date field is required.</div>
+    </div>
+    <div id="authorsContainer" class="mb-3">
+        @for (int i = 0; i < Model.Authors.ToList().Count; i++)
+        {
+            var author = Model.Authors.ToList()[i];
+            <div class="author mb-3">
+                <label class="form-label">Author:</label>
+                <div class="d-flex gap-2">
+                    <input type="hidden" name="Authors[@i].Id" value="@author.Id" />
+                    <input type="text" name="Authors[@i].FirstName" placeholder="First Name" class="form-control" value="@author.FirstName" required />
+                    <input type="text" name="Authors[@i].LastName" placeholder="Last Name" class="form-control" value="@author.LastName" required />
+                    <input type="date" name="Authors[@i].YearOfBirth" placeholder="Year of Birth" class="form-control" value="@author.YearOfBirth.ToString("yyyy-MM-dd")" required />
+                    <button type="button" class="btn btn-danger remove-author">Remove</button>
+                </div>
+            </div>
+        }
+    </div>
+    <button type="button" id="addAuthor" class="btn btn-secondary mb-3">Add Author</button>
+    <button type="button" id="updateBookBtn" class="btn btn-primary">Update Book</button>
+    <a href="@Url.Action("Details", "Books", new { bookId = Model.Id })" class="back-link">Back to <strong>Book Details</strong></a>
+
+</form>
+
+@section scripts {
+    <script>
+        document.getElementById("addAuthor").addEventListener("click", function () {
+            const authorsContainer = document.getElementById("authorsContainer");
+            const authorIndex = authorsContainer.children.length;
+            const authorDiv = document.createElement("div");
+            authorDiv.classList.add("author", "mb-3");
+            authorDiv.innerHTML = `
+                                <label class="form-label">Author:</label>
+                                <div class="d-flex gap-2">
+                                    <input type="text" name="Authors[${authorIndex}].FirstName" placeholder="First Name" class="form-control" required />
+                                    <input type="text" name="Authors[${authorIndex}].LastName" placeholder="Last Name" class="form-control" required />
+                                    <input type="date" name="Authors[${authorIndex}].YearOfBirth" placeholder="Year of Birth" class="form-control" required />
+                                    <button type="button" class="btn btn-danger remove-author">Remove</button>
+                                </div>
+                            `;
+            authorsContainer.appendChild(authorDiv);
+
+            updateRemoveButtons();
+
+            authorDiv.querySelector(".remove-author").addEventListener("click", function () {
+                authorDiv.remove();
+                updateAuthorNames();
+                updateRemoveButtons();
+            });
+        });
+
+        function updateRemoveButtons() {
+            const removeButtons = document.querySelectorAll(".remove-author");
+            removeButtons.forEach(button => {
+                button.disabled = (removeButtons.length === 1);
+            });
+        }
+
+        function updateAuthorNames() {
+            const authors = document.querySelectorAll("#authorsContainer .author");
+            authors.forEach((author, index) => {
+                const firstName = author.querySelector('input[name^="Authors["][name$="].FirstName"]');
+                const lastName = author.querySelector('input[name^="Authors["][name$="].LastName"]');
+                const yearOfBirth = author.querySelector('input[name^="Authors["][name$="].YearOfBirth"]');
+                firstName.name = `Authors[${index}].FirstName`;
+                lastName.name = `Authors[${index}].LastName`;
+                yearOfBirth.name = `Authors[${index}].YearOfBirth`;
+            });
+        }
+
+        document.getElementById("updateBookBtn").addEventListener("click", function (event) {
+            event.preventDefault();
+
+            const form = document.getElementById("updateBookForm");
+            if (form.checkValidity() === false) {
+                event.stopPropagation();
+                form.classList.add("was-validated");
+                return;
+            }
+            form.classList.add("was-validated");
+
+            const formData = new FormData(form);
+            const jsonData = {};
+
+            formData.forEach((value, key) => {
+                if (key.includes("Authors")) {
+                    const index = key.match(/\d+/)[0];
+                    const field = key.split(".")[1];
+                    if (!jsonData["Authors"]) {
+                        jsonData["Authors"] = [];
+                    }
+                    if (!jsonData["Authors"][index]) {
+                        jsonData["Authors"][index] = {};
+                    }
+                    jsonData["Authors"][index][field] = value;
+                } else {
+                    jsonData[key] = value;
+                }
+            });
+
+            fetch(`/Books/UpdateBook?bookId=${jsonData.Id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(jsonData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("successMessage").innerText = data.message;
+                        document.getElementById("successMessage").style.display = "block";
+                        setTimeout(() => {
+                            window.location.href = '/Books/Details?bookId=' + jsonData.Id;
+                        }, 2000);
+                    } else {
+                        document.getElementById("errorMessage").innerText = data.errors;
+                        document.getElementById("errorMessage").style.display = "block";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById("errorMessage").innerText = 'All fields must be entered to update the book';
+                    document.getElementById("errorMessage").style.display = "block";
+                });
+        });
+
+        document.querySelectorAll(".remove-author").forEach(button => {
+            button.addEventListener("click", function () {
+                button.closest(".author").remove();
+                updateAuthorNames();
+                updateRemoveButtons();
+            });
+        });
+
+        updateRemoveButtons();
+    </script>
+}
+
+<style>
+    .form-control.valid {
+        border-color: green !important;
+    }
+
+    .styled-form {
+        max-width: 600px;
+        margin: auto;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .form-control {
+        border-radius: 5px;
+    }
+
+    .btn-secondary, .btn-primary {
+        width: 100%;
+    }
+
+    .btn-secondary {
+        margin-bottom: 1rem;
+    }
+
+    .btn-danger {
+        align-self: center;
+    }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 16px;
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .alert {
+        margin-bottom: 1rem;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .my-4 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .container {
+        padding: 2rem;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .d-flex {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+
+    .was-validated .form-control.is-valid {
+        border-color: green;
+    }
+
+        .was-validated .form-control.is-valid + .invalid-feedback {
+            display: none;
+        }
+</style>

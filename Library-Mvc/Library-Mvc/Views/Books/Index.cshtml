@@ -1,0 +1,190 @@
+﻿@model IEnumerable<Library_Mvc.Models.Book>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 60%;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        td img {
+            max-width: 50px;
+            max-height: 50px;
+            width: auto;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        .message {
+            text-align: center;
+            color: red;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        .add-book-button {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+            .add-book-button a {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #28a745;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                font-size: 16px;
+                transition: background-color 0.3s ease;
+            }
+
+                .add-book-button a:hover {
+                    background-color: #218838;
+                }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Book List</h1>
+
+        <form method="get" action="/Books/Search">
+            <input type="text" name="searchQuery" placeholder="Search for a book..." />
+            <button type="submit">Search</button>
+        </form>
+
+        @if (!string.IsNullOrEmpty(ViewBag.Message))
+        {
+            <div class="message">@ViewBag.Message</div>
+        }
+
+        @if (!string.IsNullOrEmpty(ViewBag.Message))
+        {
+            <div class="message">@ViewBag.Message</div>
+        }
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success" role="alert">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Image</th>
+                    <th>Author(s)</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var book in Model)
+                {
+                    <tr>
+                        <td>@book.Title</td>
+                        <td>@book.Description</td>
+                        <td><img src="@book.Image" alt="Book image" /></td>
+                        <td>
+                            @foreach (var author in book.Authors)
+                            {
+                                <span>@author.FirstName @author.LastName</span>
+                            }
+                        </td>
+                        <td><a href="@Url.Action("Details", "Books", new { bookId = book.Id })">View Details</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="add-book-button">
+        <a href="@Url.Action("AddNewBook", "Books")">Add New Book</a>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <a href="@Url.Action("Index", "Home")">Return to the <strong>Main Page</strong></a> |
+        <a href="@Url.Action("Index", "ControlPanel")">Return to <strong>Control Panel</strong></a>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 Your Library. All rights reserved.</p>
+    </div>
+</body>
+</html>

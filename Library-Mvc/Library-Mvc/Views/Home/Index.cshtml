@@ -1,0 +1,108 @@
+﻿@{
+    ViewData["Title"] = "Library";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+            .header h1 {
+                font-size: 36px;
+                color: #007bff;
+            }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+            .intro p {
+                font-size: 18px;
+            }
+
+            .intro a {
+                color: #007bff;
+                text-decoration: none;
+                font-weight: bold;
+            }
+
+                .intro a:hover {
+                    text-decoration: underline;
+                }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+            .footer p {
+                font-size: 14px;
+                color: #777;
+            }
+
+        .library-image {
+            width: 80%;
+            max-width: 800px;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .control-panel-button {
+            display: inline-block;
+            background-color: white;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+              .control-panel-button:hover {
+                  background-color: #0056b3;
+              }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to Our Library</h1>
+        </div>
+        <img src="https://www.law.georgetown.edu/environmental-law-review/wp-content/uploads/sites/18/2023/10/Photo-in-a-realistic-style_-Inside-the-renowned-New-York-Public-Library-the-vast-shelves-tell-a-different-tale.-Fewer-books-are-seen-and-in-their-pl-1-1-980x552.jpg" alt="Library Image" class="library-image">
+        <div class="intro">
+            <p>To manage the library, visit the Control Panel:</p>
+            <a href="/controlpanel" class="control-panel-button">Library Control Panel</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 Your Library. All rights reserved.</p>
+    </div>
+</body>
+</html>

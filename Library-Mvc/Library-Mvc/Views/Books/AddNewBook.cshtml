@@ -1,0 +1,250 @@
+﻿@model Library_Mvc.Models.Book
+
+@{
+    ViewBag.Title = "Add New Book";
+}
+
+<h1 class="text-center my-4">Add New Book</h1>
+
+@if (ViewData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@ViewData["ErrorMessage"]</div>
+}
+
+@if (!string.IsNullOrEmpty(TempData["SuccessMessage"] as string))
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<form id="addBookForm" method="post" action="/Books/AddBook" class="styled-form container p-4 bg-light border rounded">
+    <div class="form-group mb-3">
+        <label for="title" class="form-label">Title:</label>
+        <input type="text" id="title" name="Title" class="form-control" required />
+        <div class="invalid-feedback">Title field is required.</div>
+    </div>
+    <div class="form-group mb-3">
+        <label for="description" class="form-label">Description:</label>
+        <textarea id="description" name="Description" class="form-control" rows="3" required></textarea>
+        <div class="invalid-feedback">Description field is required.</div>
+    </div>
+    <div class="form-group mb-3">
+        <label for="image" class="form-label">Image URL:</label>
+        <input type="text" id="image" name="Image" class="form-control" required />
+        <div class="invalid-feedback">Image field is required.</div>
+    </div>
+    <div class="form-group mb-3">
+        <label for="publicationDate" class="form-label">Publication Date:</label>
+        <input type="date" id="publicationDate" name="PublicationDate" class="form-control" required />
+        <div class="invalid-feedback">Publication Date field is required.</div>
+    </div>
+    <div id="authorsContainer" class="mb-3">
+        <div class="author mb-3">
+            <label class="form-label">Author:</label>
+            <div class="d-flex gap-2">
+                <input type="text" name="Authors[0].FirstName" placeholder="First Name" class="form-control" required />
+                <input type="text" name="Authors[0].LastName" placeholder="Last Name" class="form-control" required />
+                <input type="date" name="Authors[0].YearOfBirth" placeholder="Year of Birth" class="form-control" required />
+                <button type="button" class="btn btn-danger remove-author" disabled>Remove</button>
+            </div>
+        </div>
+    </div>
+    <button type="button" id="addAuthor" class="btn btn-secondary mb-3">Add Author</button>
+    <button type="button" id="addBookBtn" class="btn btn-primary">Add Book</button>
+    <a href="@Url.Action("Index", "Books")" class="back-link">Back to <strong>Book List</strong></a>
+</form>
+
+<div id="successMessage" class="alert alert-success" style="display: none;"></div>
+
+@section scripts {
+    <script>
+        document.getElementById("addAuthor").addEventListener("click", function () {
+            const authorsContainer = document.getElementById("authorsContainer");
+            const authorIndex = authorsContainer.children.length;
+            const authorDiv = document.createElement("div");
+            authorDiv.classList.add("author", "mb-3");
+            authorDiv.innerHTML = `
+                        <label class="form-label">Author:</label>
+                        <div class="d-flex gap-2">
+                            <input type="text" name="Authors[${authorIndex}].FirstName" placeholder="First Name" class="form-control" required />
+                            <input type="text" name="Authors[${authorIndex}].LastName" placeholder="Last Name" class="form-control" required />
+                            <input type="date" name="Authors[${authorIndex}].YearOfBirth" placeholder="Year of Birth" class="form-control" required />
+                            <button type="button" class="btn btn-danger remove-author">Remove</button>
+                        </div>
+                    `;
+            authorsContainer.appendChild(authorDiv);
+
+            updateRemoveButtons();
+
+            authorDiv.querySelector(".remove-author").addEventListener("click", function () {
+                authorDiv.remove();
+                updateAuthorNames();
+                updateRemoveButtons();
+            });
+        });
+
+        function updateRemoveButtons() {
+            const removeButtons = document.querySelectorAll(".remove-author");
+            removeButtons.forEach(button => {
+                button.disabled = (removeButtons.length === 1);
+            });
+        }
+
+        function updateAuthorNames() {
+            const authors = document.querySelectorAll("#authorsContainer .author");
+            authors.forEach((author, index) => {
+                const firstName = author.querySelector('input[name^="Authors["][name$="].FirstName"]');
+                const lastName = author.querySelector('input[name^="Authors["][name$="].LastName"]');
+                const yearOfBirth = author.querySelector('input[name^="Authors["][name$="].YearOfBirth"]');
+                firstName.name = `Authors[${index}].FirstName`;
+                lastName.name = `Authors[${index}].LastName`;
+                yearOfBirth.name = `Authors[${index}].YearOfBirth`;
+            });
+        }
+
+        document.getElementById("addBookBtn").addEventListener("click", function (event) {
+            const form = document.getElementById("addBookForm");
+            if (form.checkValidity() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add("was-validated");
+
+            const formData = new FormData(form);
+            const jsonData = {};
+
+            formData.forEach((value, key) => {
+                if (key.includes("Authors")) {
+                    const index = key.match(/\d+/)[0];
+                    const field = key.split(".")[1];
+                    if (!jsonData["Authors"]) {
+                        jsonData["Authors"] = [];
+                    }
+                    if (!jsonData["Authors"][index]) {
+                        jsonData["Authors"][index] = {};
+                    }
+                    jsonData["Authors"][index][field] = value;
+                } else {
+                    jsonData[key] = value;
+                }
+            });
+
+            fetch("/Books/AddBook", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(jsonData)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        const successMessage = "Book has been successfully added";
+                        document.getElementById("addBookForm").reset();
+                        document.getElementById("successMessage").innerText = successMessage;
+                        document.getElementById("successMessage").style.display = "block";
+                        const formFields = form.querySelectorAll(".form-control");
+                        formFields.forEach(field => {
+                            field.classList.remove("is-invalid");
+                            field.classList.add("is-valid");
+                        });
+
+                        setTimeout(function () {
+                            window.location.href = '/Books';
+                        }, 2000);
+                    } else {
+                        throw new Error('Error adding book');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('All fields must be entered to add a book');
+                });
+        });
+
+        document.querySelectorAll(".remove-author").forEach(button => {
+            button.addEventListener("click", function () {
+                button.closest(".author").remove();
+                updateAuthorNames();
+                updateRemoveButtons();
+            });
+        });
+
+        updateRemoveButtons();
+    </script>
+}
+
+<style>
+    .form-control.valid {
+        border-color: green !important;
+    }
+
+    .styled-form {
+        max-width: 600px;
+        margin: auto;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .form-control {
+        border-radius: 5px;
+    }
+
+    .btn-secondary, .btn-primary {
+        width: 100%;
+    }
+
+    .btn-secondary {
+        margin-bottom: 1rem;
+    }
+
+    .btn-danger {
+        align-self: center;
+    }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 16px;
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .alert {
+        margin-bottom: 1rem;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .my-4 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .container {
+        padding: 2rem;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .d-flex {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+
+    .was-validated .form-control.is-valid {
+        border-color: green;
+    }
+
+        .was-validated .form-control.is-valid + .invalid-feedback {
+            display: none;
+        }
+</style>
